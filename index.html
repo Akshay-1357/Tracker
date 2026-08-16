@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>Fit — Fitness Journal</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FAF6E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1C1C1A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Fit">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF6E8; --bg-elevated:#FFFFFF; --card-border:#E7E0C9; --card-border-soft:#EFE9D4;
+  --text:#2B2A25; --text-secondary:#847A5F; --text-faint:#B0A98F;
+  --accent:#B98A17; --accent-strong:#8F6A10; --accent-soft:#F2E4BC; --accent-soft-text:#6E5410;
+  --danger:#B24B3C; --danger-soft:#F5DFDA; --success:#4C7A52; --success-soft:#DCEBDD;
+  --radius-lg:20px; --radius-md:14px; --radius-sm:10px;
+  --nav-h:64px; --safe-b: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+[data-theme="dark"]{
+  --bg:#1C1C1A; --bg-elevated:#262624; --card-border:#3A3934; --card-border-soft:#333230;
+  --text:#EDE8DA; --text-secondary:#A39C87; --text-faint:#6F695A;
+  --accent:#E3B94A; --accent-strong:#EFCB6E; --accent-soft:#3C331A; --accent-soft-text:#E3B94A;
+  --danger:#D97A6A; --danger-soft:#3B2521; --success:#7FB088; --success-soft:#20301F;
+  color-scheme: dark;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  font-variant-numeric: tabular-nums;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+#app{max-width:480px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px);}
+::selection{background:var(--accent-soft);}
+button{font-family:inherit;}
+input,select,textarea{font-family:inherit;}
+
+.topbar{position:sticky; top:0; z-index:20; background:var(--bg); padding:18px 18px 8px; display:flex; align-items:center; justify-content:space-between;}
+.topbar h1{font-size:20px; font-weight:600; margin:0; letter-spacing:-0.01em;}
+.topbar .date-label{font-size:13px; color:var(--text-secondary); margin-top:2px;}
+.icon-btn{
+  width:38px;height:38px;border-radius:50%; border:1px solid var(--card-border); background:var(--bg-elevated);
+  display:flex; align-items:center; justify-content:center; color:var(--text-secondary); cursor:pointer; flex-shrink:0;
+}
+.icon-btn:active{transform:scale(0.95);}
+
+.content{padding:6px 18px 24px;}
+
+.card{
+  background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:var(--radius-lg);
+  padding:18px; margin-bottom:14px;
+}
+.card-flat{background:transparent; border:none; padding:0; margin-bottom:14px;}
+.card-title{font-size:13px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; margin:0 0 12px;}
+.card-title-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+.card-title-row .card-title{margin:0;}
+.link-btn{background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;padding:4px;}
+
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.stat-box{background:var(--bg); border-radius:var(--radius-md); padding:14px; border:1px solid var(--card-border-soft);}
+.stat-label{font-size:12px; color:var(--text-secondary); margin-bottom:6px; display:flex; align-items:center; gap:6px;}
+.stat-value{font-size:22px; font-weight:600; letter-spacing:-0.01em;}
+.stat-value .unit{font-size:13px; font-weight:500; color:var(--text-secondary); margin-left:3px;}
+.stat-sub{font-size:12px; color:var(--text-faint); margin-top:3px;}
+
+.progress-track{height:6px; background:var(--card-border-soft); border-radius:4px; overflow:hidden; margin-top:8px;}
+.progress-fill{height:100%; background:var(--accent); border-radius:4px; transition:width .25s ease;}
+
+.quick-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;}
+.quick-btn{
+  background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:var(--radius-md);
+  padding:14px 10px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; color:var(--text);
+}
+.quick-btn:active{transform:scale(0.97); background:var(--accent-soft);}
+.quick-btn .qi{width:34px;height:34px;border-radius:50%; background:var(--accent-soft); color:var(--accent-strong); display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:600;}
+.quick-btn span.label{font-size:12.5px; font-weight:600;}
+
+.empty-state{text-align:center; padding:28px 16px; color:var(--text-secondary);}
+.empty-state .es-icon{font-size:26px; margin-bottom:8px; opacity:0.5;}
+.empty-state .es-title{font-size:14.5px; font-weight:600; color:var(--text); margin-bottom:4px;}
+.empty-state .es-body{font-size:13px; line-height:1.5;}
+
+/* Bottom nav */
+.bottomnav{
+  position:fixed; bottom:0; left:0; right:0; z-index:30;
+  background:var(--bg-elevated); border-top:1px solid var(--card-border);
+  padding-bottom:var(--safe-b);
+}
+.bottomnav-inner{max-width:480px; margin:0 auto; display:flex; height:var(--nav-h);}
+.nav-item{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; background:none; border:none; color:var(--text-faint); cursor:pointer;}
+.nav-item.active{color:var(--accent);}
+.nav-item .ni{font-size:20px; line-height:1;}
+.nav-item .nl{font-size:11px; font-weight:600;}
+
+/* Buttons */
+.btn{
+  border-radius:var(--radius-sm); border:1px solid var(--card-border); background:var(--bg-elevated);
+  padding:12px 16px; font-size:14.5px; font-weight:600; color:var(--text); cursor:pointer; width:100%;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+[data-theme="dark"] .btn-primary{color:#241C05;}
+.btn-danger-outline{border-color:var(--danger); color:var(--danger); background:transparent;}
+.btn-sm{padding:8px 12px; font-size:13px; width:auto;}
+.btn-row{display:flex; gap:10px;}
+.btn-row .btn{flex:1;}
+
+/* Chip / segmented */
+.chip-row{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; -ms-overflow-style:none; scrollbar-width:none;}
+.chip-row::-webkit-scrollbar{display:none;}
+.chip{
+  flex-shrink:0; padding:9px 16px; border-radius:999px; border:1px solid var(--card-border); background:var(--bg-elevated);
+  font-size:13.5px; font-weight:600; color:var(--text-secondary); cursor:pointer; white-space:nowrap;
+}
+.chip.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+[data-theme="dark"] .chip.active{color:#241C05;}
+
+.segmented{display:flex; background:var(--bg); border:1px solid var(--card-border); border-radius:var(--radius-sm); padding:3px;}
+.segmented button{flex:1; border:none; background:none; padding:9px 4px; font-size:13px; font-weight:600; color:var(--text-secondary); border-radius:8px; cursor:pointer;}
+.segmented button.active{background:var(--bg-elevated); color:var(--text); box-shadow:0 1px 2px rgba(0,0,0,0.06);}
+
+/* Forms */
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:12.5px; font-weight:600; color:var(--text-secondary); margin-bottom:7px;}
+.field input[type=text], .field input[type=number], .field input[type=date], .field select, .field textarea{
+  width:100%; border:1px solid var(--card-border); background:var(--bg); border-radius:var(--radius-sm);
+  padding:12px 14px; font-size:15px; color:var(--text); appearance:none;
+}
+.field textarea{min-height:64px; resize:vertical;}
+.field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:var(--accent);}
+
+.stepper{display:flex; align-items:center; gap:0; border:1px solid var(--card-border); border-radius:var(--radius-sm); overflow:hidden; background:var(--bg);}
+.stepper button{width:46px; height:46px; border:none; background:var(--bg-elevated); font-size:19px; color:var(--text); cursor:pointer; flex-shrink:0;}
+.stepper button:active{background:var(--accent-soft);}
+.stepper .stepper-val{flex:1; text-align:center; font-size:17px; font-weight:600;}
+
+/* Modal / sheet */
+.overlay{position:fixed; inset:0; background:rgba(20,18,10,0.42); z-index:100; display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .18s ease;}
+.overlay.open{opacity:1; pointer-events:auto;}
+.sheet{
+  background:var(--bg); width:100%; max-width:480px; margin:0 auto; border-radius:22px 22px 0 0;
+  padding:10px 18px calc(22px + var(--safe-b)); max-height:88vh; overflow-y:auto;
+  transform:translateY(100%); transition:transform .22s cubic-bezier(.25,.8,.4,1);
+}
+.overlay.open .sheet{transform:translateY(0);}
+.sheet-handle{width:36px; height:4px; background:var(--card-border); border-radius:2px; margin:6px auto 14px;}
+.sheet-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+.sheet-header h2{font-size:17px; font-weight:600; margin:0;}
+.sheet-close{background:none; border:none; color:var(--text-secondary); font-size:20px; cursor:pointer; padding:4px;}
+
+/* Exercise log rows */
+.exercise-card{border:1px solid var(--card-border); border-radius:var(--radius-md); padding:14px; margin-bottom:12px; background:var(--bg-elevated);}
+.exercise-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;}
+.exercise-name{font-size:15px; font-weight:600;}
+.exercise-meta{display:flex; gap:12px; font-size:11.5px; color:var(--text-faint); margin-bottom:10px; flex-wrap:wrap;}
+.exercise-meta b{color:var(--text-secondary); font-weight:600;}
+.set-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+.set-idx{width:20px; font-size:12px; color:var(--text-faint); font-weight:600; flex-shrink:0;}
+.set-input-group{display:flex; align-items:center; gap:6px; flex:1;}
+.mini-input{width:100%; border:1px solid var(--card-border); background:var(--bg); border-radius:8px; padding:9px 6px; text-align:center; font-size:14.5px; font-weight:600; color:var(--text);}
+.mini-input:focus{outline:none; border-color:var(--accent);}
+.set-x{color:var(--text-faint); font-size:13px; flex-shrink:0;}
+.set-del{width:30px; height:30px; border:none; background:none; color:var(--text-faint); font-size:16px; cursor:pointer; flex-shrink:0;}
+.exercise-actions{display:flex; gap:8px; margin-top:10px;}
+.add-set-btn{flex:1; border:1px dashed var(--card-border); background:none; border-radius:8px; padding:9px; font-size:13px; font-weight:600; color:var(--accent); cursor:pointer;}
+
+.swipe-item{position:relative; overflow:hidden; border-radius:var(--radius-md); margin-bottom:10px;}
+.swipe-content{background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:var(--radius-md); padding:14px; position:relative; z-index:1;}
+.list-row{display:flex; align-items:center; justify-content:space-between;}
+.list-row-main .lr-title{font-size:14.5px; font-weight:600;}
+.list-row-main .lr-sub{font-size:12.5px; color:var(--text-secondary); margin-top:2px;}
+.lr-actions{display:flex; gap:6px;}
+.lr-icon-btn{width:32px;height:32px;border-radius:8px; border:none; background:var(--bg); color:var(--text-secondary); font-size:14px; cursor:pointer;}
+
+.section-label{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-faint); margin:20px 0 10px;}
+.section-label:first-child{margin-top:0;}
+
+.more-list{background:var(--bg-elevated); border:1px solid var(--card-border); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:16px;}
+.more-item{display:flex; align-items:center; gap:12px; padding:15px 16px; border-bottom:1px solid var(--card-border-soft); cursor:pointer;}
+.more-item:last-child{border-bottom:none;}
+.more-item .mi-icon{width:34px;height:34px;border-radius:10px; background:var(--accent-soft); color:var(--accent-strong); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;}
+.more-item .mi-text{flex:1;}
+.more-item .mi-title{font-size:14.5px; font-weight:600;}
+.more-item .mi-sub{font-size:12px; color:var(--text-secondary); margin-top:1px;}
+.more-item .mi-chev{color:var(--text-faint); font-size:15px;}
+.more-item:active{background:var(--bg);}
+
+.subpage-header{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+.back-btn{width:34px;height:34px;border-radius:50%; border:1px solid var(--card-border); background:var(--bg-elevated); display:flex; align-items:center; justify-content:center; color:var(--text); cursor:pointer; flex-shrink:0; font-size:15px;}
+.subpage-header h2{font-size:18px; font-weight:600; margin:0;}
+
+.badge{display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent-soft-text);}
+.badge-success{background:var(--success-soft); color:var(--success);}
+
+.photo-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+.photo-slot{aspect-ratio:3/4; border-radius:var(--radius-sm); border:1.5px dashed var(--card-border); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--text-faint); font-size:11px; font-weight:600; position:relative; overflow:hidden; cursor:pointer; background:var(--bg);}
+.photo-slot img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+.photo-slot input{position:absolute; inset:0; opacity:0; cursor:pointer;}
+
+.checkin-card{border:1px solid var(--card-border); border-radius:var(--radius-md); padding:14px; margin-bottom:10px; background:var(--bg-elevated);}
+
+@media (min-width:600px){
+  #app{border-left:1px solid var(--card-border); border-right:1px solid var(--card-border);}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar" id="topbar"></div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="bottomnav">
+  <div class="bottomnav-inner" id="bottomnav"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+
+<script>
+/* ============ STATE & STORAGE (IndexedDB) ============ */
+const STORAGE_KEY = 'fitness-journal-db';
+let DB = null;
+let saveTimer = null;
+
+const idbStorage = {
+  _db: null,
+  async open(){
+    if(this._db) return this._db;
+    this._db = await new Promise((resolve, reject)=>{
+      const req = indexedDB.open('ledger-app-db', 1);
+      req.onupgradeneeded = ()=>{ req.result.createObjectStore('kv'); };
+      req.onsuccess = ()=> resolve(req.result);
+      req.onerror = ()=> reject(req.error);
+    });
+    return this._db;
+  },
+  async get(key){
+    const db = await this.open();
+    return new Promise((resolve, reject)=>{
+      const tx = db.transaction('kv','readonly');
+      const req = tx.objectStore('kv').get(key);
+      req.onsuccess = ()=> resolve(req.result===undefined ? null : {key, value:req.result});
+      req.onerror = ()=> reject(req.error);
+    });
+  },
+  async set(key, value){
+    const db = await this.open();
+    return new Promise((resolve, reject)=>{
+      const tx = db.transaction('kv','readwrite');
+      tx.objectStore('kv').put(value, key);
+      tx.oncomplete = ()=> resolve({key, value});
+      tx.onerror = ()=> reject(tx.error);
+    });
+  }
+};
+window.storage = window.storage && window.storage.get ? window.storage : idbStorage;
+
+const DEFAULT_DB = () => ({
+  weights: [],
+  workouts: [],
+  nutrition: [],
+  runs: [],
+  measurements: [],
+  checkins: [],
+  settings: { calorieTarget: 2800, proteinTarget: 180, waterTarget: 3000, sleepTarget: 8, theme: 'system', unit: 'kg' },
+  plans: {
+    'Push A': ['Incline Barbell Press', 'Flat DB Bench Press', 'Overhead Press', 'Lateral Raise', 'Triceps Pushdown'],
+    'Pull A': ['Pull-ups', 'Barbell Row', 'Lat Pulldown', 'Face Pull', 'DB Curl'],
+    'Legs A': ['Squat', 'RDL', 'Leg Press', 'Leg Curl', 'Calf Raise'],
+    'Push B': ['DB Bench Press', 'Incline DB Press', 'Arnold Press', 'Cable Fly', 'Overhead Triceps Extension'],
+    'Pull B': ['Lat Pulldown', 'Seated Cable Row', 'DB Row', 'Rear Delt Fly', 'Hammer Curl'],
+    'Legs B': ['Squat', 'RDL', 'Walking Lunge', 'Leg Extension', 'Seated Calf Raise']
+  }
+});
+
+const STRENGTH_EXERCISES = ['Incline Barbell Press','DB Bench Press','Pull-ups','Lat Pulldown','Barbell Row','Squat','RDL','DB Curl','Hammer Curl'];
+
+async function loadDB(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    DB = res ? JSON.parse(res.value) : DEFAULT_DB();
+    DB = { ...DEFAULT_DB(), ...DB, settings:{...DEFAULT_DB().settings, ...(DB.settings||{})}, plans:{...DEFAULT_DB().plans, ...(DB.plans||{})} };
+  }catch(e){
+    DB = DEFAULT_DB();
+  }
+}
+function saveDB(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(DB), false); }catch(e){ console.error('save failed', e); }
+  }, 250);
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+function fmtDate(dstr){
+  const d = new Date(dstr+'T00:00:00');
+  const today = todayStr();
+  const yest = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(dstr===today) return 'Today';
+  if(dstr===yest) return 'Yesterday';
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+function round1(n){ return Math.round(n*10)/10; }
+
+/* ============ APP STATE ============ */
+let route = { tab:'today', sub:null, params:{} };
+
+function setTheme(){
+  const t = DB.settings.theme;
+  if(t==='system'){
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', t);
+  }
+}
+
+/* ============ ICONS (inline minimal svg-ish via unicode/simple shapes) ============ */
+const ICONS = {
+  today: '&#9679;', workout: '&#9673;', progress: '&#9650;', more: '&#8942;',
+  weight:'&#9878;', flame:'&#9678;', drop:'&#9711;', moon:'&#9789;', bolt:'&#9889;',
+  plus:'+', close:'&times;', back:'&#8592;', chev:'&#8250;', edit:'&#9998;', trash:'&#128465;',
+  check:'&#10003;', sun:'&#9728;'
+};
+
+/* ============ RENDER: SHELL ============ */
+function render(){
+  renderTopbar();
+  renderContent();
+  renderNav();
+}
+
+function renderTopbar(){
+  const tb = document.getElementById('topbar');
+  const titles = { today:'Fit', workout:'Workout', progress:'Progress', more:'More' };
+  let title = titles[route.tab];
+  let showBack = false;
+  if(route.tab==='more' && route.sub){
+    const subtitles = { nutrition:'Nutrition', running:'Running', checkin:'Monthly check-in', settings:'Settings', exercises:'Exercise plans' };
+    title = subtitles[route.sub] || 'More';
+    showBack = true;
+  }
+  const dateLabel = new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+  tb.innerHTML = `
+    <div>
+      ${showBack ? `<button class="back-btn" style="margin-bottom:6px" onclick="navBack()">${ICONS.back}</button>` : ''}
+      <h1>${title}</h1>
+      ${route.tab==='today' && !showBack ? `<div class="date-label">${dateLabel}</div>` : ''}
+    </div>
+    <button class="icon-btn" onclick="toggleTheme()" aria-label="Toggle theme">${currentIsDark() ? ICONS.sun : ICONS.moon}</button>
+  `;
+}
+function currentIsDark(){
+  if(DB.settings.theme==='dark') return true;
+  if(DB.settings.theme==='light') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function toggleTheme(){
+  const order = ['system','light','dark'];
+  const cur = DB.settings.theme;
+  DB.settings.theme = cur==='system' ? (currentIsDark()?'light':'dark') : (cur==='light'?'dark':'light');
+  setTheme(); saveDB(); render();
+}
+
+function navBack(){
+  route.sub = null; render();
+}
+function go(tab, sub, params){
+  route = { tab, sub: sub||null, params: params||{} };
+  render();
+  window.scrollTo(0,0);
+}
+
+function renderNav(){
+  const nav = document.getElementById('bottomnav');
+  const items = [
+    {id:'today', icon:'&#8962;', label:'Today'},
+    {id:'workout', icon:'&#128170;', label:'Workout'},
+    {id:'progress', icon:'&#128200;', label:'Progress'},
+    {id:'more', icon:'&#9776;', label:'More'}
+  ];
+  nav.innerHTML = items.map(it => `
+    <button class="nav-item ${route.tab===it.id?'active':''}" onclick="go('${it.id}')">
+      <span class="ni">${it.icon}</span>
+      <span class="nl">${it.label}</span>
+    </button>
+  `).join('');
+}
+
+function renderContent(){
+  const c = document.getElementById('content');
+  if(route.tab==='today') c.innerHTML = renderToday();
+  else if(route.tab==='workout') c.innerHTML = renderWorkout();
+  else if(route.tab==='progress') c.innerHTML = renderProgress();
+  else if(route.tab==='more'){
+    if(!route.sub) c.innerHTML = renderMoreMenu();
+    else if(route.sub==='nutrition') c.innerHTML = renderNutritionPage();
+    else if(route.sub==='running') c.innerHTML = renderRunningPage();
+    else if(route.sub==='checkin') c.innerHTML = renderCheckinPage();
+    else if(route.sub==='settings') c.innerHTML = renderSettingsPage();
+    else if(route.sub==='exercises') c.innerHTML = renderExercisesPage();
+  }
+  afterRender();
+}
+function afterRender(){
+  document.querySelectorAll('.chart-svg-target').forEach(el=>{});
+}
+
+/* ============ TODAY ============ */
+function renderToday(){
+  const today = todayStr();
+  const wEntry = DB.weights.find(w=>w.date===today);
+  const lastWeight = DB.weights.length ? DB.weights[DB.weights.length-1] : null;
+  const nEntry = DB.nutrition.find(n=>n.date===today);
+  const wo = DB.workouts.find(w=>w.date===today);
+
+  const last7 = getLast7Weights();
+  const trendSvg = weightSparkline(last7);
+
+  const cal = nEntry?.calories || 0, calT = DB.settings.calorieTarget;
+  const pro = nEntry?.protein || 0, proT = DB.settings.proteinTarget;
+  const water = nEntry?.water || 0, waterT = DB.settings.waterTarget;
+  const sleep = nEntry?.sleep || 0;
+
+  return `
+    <div class="quick-grid">
+      <button class="quick-btn" onclick="openQuickWeight()"><span class="qi">${ICONS.plus}</span><span class="label">Weight</span></button>
+      <button class="quick-btn" onclick="go('workout')"><span class="qi">${ICONS.plus}</span><span class="label">Workout</span></button>
+      <button class="quick-btn" onclick="openQuickNutrition()"><span class="qi">${ICONS.plus}</span><span class="label">Nutrition</span></button>
+      <button class="quick-btn" onclick="openQuickRun()"><span class="qi">${ICONS.plus}</span><span class="label">Run</span></button>
+    </div>
+
+    <div class="card">
+      <div class="card-title-row">
+        <p class="card-title">Weight</p>
+        ${last7.length>1 ? `<span class="badge">${weeklyTrendLabel(last7)}</span>` : ''}
+      </div>
+      <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+        <div>
+          <div class="stat-value" style="font-size:32px;">${wEntry ? wEntry.weight : (lastWeight ? lastWeight.weight : '—')}<span class="unit">kg</span></div>
+          <div class="stat-sub">${wEntry ? 'Logged today' : (lastWeight ? 'Last: '+fmtDate(lastWeight.date) : 'No entries yet')}</div>
+        </div>
+        ${trendSvg ? `<div>${trendSvg}</div>` : ''}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title-row">
+        <p class="card-title">Today's workout</p>
+      </div>
+      ${wo ? `
+        <div class="list-row">
+          <div class="list-row-main">
+            <div class="lr-title">${wo.type}</div>
+            <div class="lr-sub">${wo.exercises.length} exercises logged</div>
+          </div>
+          <span class="badge badge-success">Done</span>
+        </div>
+      ` : `
+        <div class="empty-state" style="padding:14px 0;">
+          <div class="es-body">Nothing logged yet today.</div>
+        </div>
+        <button class="btn btn-primary" onclick="go('workout')">Log a workout</button>
+      `}
+    </div>
+
+    <div class="card">
+      <p class="card-title">Nutrition</p>
+      <div class="stat-grid">
+        ${nutritionMiniStat('Calories', cal, calT, 'kcal')}
+        ${nutritionMiniStat('Protein', pro, proT, 'g')}
+        ${nutritionMiniStat('Water', water, waterT, 'ml')}
+        <div class="stat-box">
+          <div class="stat-label">${ICONS.moon} Sleep</div>
+          <div class="stat-value">${sleep || '—'}<span class="unit">${sleep?'hrs':''}</span></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function nutritionMiniStat(label, val, target, unit){
+  const pct = target ? Math.min(100, Math.round((val/target)*100)) : 0;
+  return `
+    <div class="stat-box">
+      <div class="stat-label">${label}</div>
+      <div class="stat-value">${val || 0}<span class="unit">/${target} ${unit}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+  `;
+}
+function getLast7Weights(){
+  const cutoff = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+  return DB.weights.filter(w=>w.date>=cutoff).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function weeklyTrendLabel(arr){
+  if(arr.length<2) return '';
+  const diff = round1(arr[arr.length-1].weight - arr[0].weight);
+  if(diff===0) return 'No change';
+  return (diff>0?'+':'') + diff + ' kg';
+}
+function weightSparkline(arr){
+  if(arr.length<2) return '';
+  const w=110,h=40,pad=4;
+  const vals = arr.map(a=>a.weight);
+  const min=Math.min(...vals), max=Math.max(...vals);
+  const range = (max-min)||1;
+  const pts = arr.map((a,i)=>{
+    const x = pad + (i/(arr.length-1))*(w-pad*2);
+    const y = h-pad - ((a.weight-min)/range)*(h-pad*2);
+    return `${x},${y}`;
+  }).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+/* ============ WORKOUT ============ */
+let workoutState = { type: null, date: todayStr(), exercises: {} };
+
+function renderWorkout(){
+  const types = Object.keys(DB.plans);
+  if(!workoutState.type) workoutState.type = types[0];
+  const t = workoutState.type;
+  const planNames = DB.plans[t] || [];
+  const existing = DB.workouts.find(w=>w.date===workoutState.date && w.type===t);
+
+  if(!workoutState.exercises[t] || workoutState._loadedFor!==t+workoutState.date){
+    workoutState.exercises[t] = planNames.map(name=>{
+      const savedEx = existing?.exercises.find(e=>e.name===name);
+      return savedEx ? JSON.parse(JSON.stringify(savedEx)) : { name, sets:[], notes:'' };
+    });
+    workoutState._loadedFor = t+workoutState.date;
+  }
+
+  const recent = getRecentWorkouts(5);
+
+  return `
+    <div class="chip-row" style="margin-bottom:16px;">
+      ${types.map(ty=>`<button class="chip ${ty===t?'active':''}" onclick="selectWorkoutType('${ty}')">${ty}</button>`).join('')}
+    </div>
+
+    <div id="exercise-list">
+      ${workoutState.exercises[t].map((ex,i)=>renderExerciseCard(ex,i)).join('')}
+    </div>
+
+    <button class="btn" style="margin-bottom:14px;" onclick="addCustomExercise()">${ICONS.plus} Add exercise</button>
+    <button class="btn btn-primary" onclick="saveWorkout()">${ICONS.check} Save workout</button>
+
+    ${recent.length ? `
+      <p class="section-label">Recent sessions</p>
+      ${recent.map(w=>`
+        <div class="swipe-item">
+          <div class="swipe-content">
+            <div class="list-row">
+              <div class="list-row-main">
+                <div class="lr-title">${w.type}</div>
+                <div class="lr-sub">${fmtDate(w.date)} · ${w.exercises.length} exercises</div>
+              </div>
+              <div class="lr-actions">
+                <button class="lr-icon-btn" onclick="deleteWorkout('${w.id}')">${ICONS.trash}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    ` : ''}
+  `;
+}
+function selectWorkoutType(ty){
+  workoutState.type = ty;
+  render();
+}
+function getRecentWorkouts(n){
+  return [...DB.workouts].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,n);
+}
+function getPrevExerciseSets(name, excludeDate){
+  const logs = DB.workouts
+    .filter(w => w.date < (excludeDate||'9999') )
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  for(const w of logs){
+    const ex = w.exercises.find(e=>e.name===name);
+    if(ex && ex.sets.length) return { date:w.date, sets:ex.sets };
+  }
+  return null;
+}
+function getPB(name){
+  let best = null;
+  DB.workouts.forEach(w=>{
+    const ex = w.exercises.find(e=>e.name===name);
+    if(ex) ex.sets.forEach(s=>{
+      if(!best || s.weight>best.weight) best = s;
+    });
+  });
+  return best;
+}
+function suggestNextTarget(name){
+  const prev = getPrevExerciseSets(name);
+  if(!prev || !prev.sets.length) return null;
+  const topSet = prev.sets.reduce((a,b)=> b.weight>a.weight ? b : a, prev.sets[0]);
+  if(topSet.reps>=8) return { weight: round1(topSet.weight+2.5), reps: topSet.reps, note:'+2.5kg' };
+  return { weight: topSet.weight, reps: topSet.reps+1, note:'+1 rep' };
+}
+
+function renderExerciseCard(ex, idx){
+  const prev = getPrevExerciseSets(ex.name, workoutState.date);
+  const pb = getPB(ex.name);
+  const target = suggestNextTarget(ex.name);
+  return `
+    <div class="exercise-card">
+      <div class="exercise-head">
+        <div class="exercise-name">${ex.name}</div>
+        <button class="lr-icon-btn" onclick="removeExerciseFromToday(${idx})">${ICONS.trash}</button>
+      </div>
+      <div class="exercise-meta">
+        <span>Prev: <b>${prev ? prev.sets.map(s=>s.weight+'×'+s.reps).join(', ') : '—'}</b></span>
+        <span>PB: <b>${pb ? pb.weight+'kg×'+pb.reps : '—'}</b></span>
+        <span>Target: <b>${target ? target.weight+'kg×'+target.reps : '—'}</b></span>
+      </div>
+      ${ex.sets.map((s,si)=>`
+        <div class="set-row">
+          <span class="set-idx">${si+1}</span>
+          <div class="set-input-group">
+            <input class="mini-input" type="number" inputmode="decimal" step="0.5" placeholder="kg" value="${s.weight??''}" onchange="updateSet(${idx},${si},'weight',this.value)">
+            <span class="set-x">×</span>
+            <input class="mini-input" type="number" inputmode="numeric" placeholder="reps" value="${s.reps??''}" onchange="updateSet(${idx},${si},'reps',this.value)">
+            <input class="mini-input" type="number" inputmode="numeric" placeholder="RIR" value="${s.rir??''}" onchange="updateSet(${idx},${si},'rir',this.value)">
+          </div>
+          <button class="set-del" onclick="removeSet(${idx},${si})">${ICONS.close}</button>
+        </div>
+      `).join('')}
+      <div class="exercise-actions">
+        <button class="add-set-btn" onclick="addSet(${idx})">${ICONS.plus} Add set</button>
+        ${prev ? `<button class="add-set-btn" onclick="repeatLastSet(${idx})">Repeat last</button>` : ''}
+      </div>
+      <textarea class="mini-input" style="width:100%; margin-top:10px; text-align:left; font-weight:400; font-size:13px;" placeholder="Notes (optional)" onchange="updateExerciseNotes(${idx},this.value)">${ex.notes||''}</textarea>
+    </div>
+  `;
+}
+function addSet(idx){
+  const t = workoutState.type;
+  const ex = workoutState.exercises[t][idx];
+  const last = ex.sets[ex.sets.length-1];
+  ex.sets.push(last ? {...last} : {weight:'',reps:'',rir:''});
+  render();
+}
+function repeatLastSet(idx){
+  const t = workoutState.type;
+  const ex = workoutState.exercises[t][idx];
+  const prev = getPrevExerciseSets(ex.name, workoutState.date);
+  if(prev) ex.sets = JSON.parse(JSON.stringify(prev.sets));
+  render();
+}
+function removeSet(idx,si){
+  workoutState.exercises[workoutState.type][idx].sets.splice(si,1);
+  render();
+}
+function updateSet(idx,si,field,val){
+  const ex = workoutState.exercises[workoutState.type][idx];
+  ex.sets[si][field] = val===''?'':Number(val);
+}
+function updateExerciseNotes(idx,val){
+  workoutState.exercises[workoutState.type][idx].notes = val;
+}
+function removeExerciseFromToday(idx){
+  workoutState.exercises[workoutState.type].splice(idx,1);
+  render();
+}
+function addCustomExercise(){
+  openAddExerciseSheet(workoutState.type, true);
+}
+function saveWorkout(){
+  const t = workoutState.type;
+  const exercises = workoutState.exercises[t].filter(e=>e.sets.length>0).map(e=>({
+    name:e.name, notes:e.notes||'',
+    sets: e.sets.filter(s=>s.weight!=='' && s.reps!=='').map(s=>({weight:Number(s.weight)||0, reps:Number(s.reps)||0, rir: s.rir===''?null:Number(s.rir)}))
+  })).filter(e=>e.sets.length>0);
+
+  if(!exercises.length){ alert('Log at least one set before saving.'); return; }
+
+  const existingIdx = DB.workouts.findIndex(w=>w.date===workoutState.date && w.type===t);
+  const entry = { id: existingIdx>=0?DB.workouts[existingIdx].id:uid(), date: workoutState.date, type:t, exercises };
+  if(existingIdx>=0) DB.workouts[existingIdx] = entry; else DB.workouts.push(entry);
+  saveDB();
+  workoutState._loadedFor = null;
+  go('today');
+}
+function deleteWorkout(id){
+  if(!confirm('Delete this workout?')) return;
+  DB.workouts = DB.workouts.filter(w=>w.id!==id);
+  saveDB(); render();
+}
+
+/* ============ PROGRESS ============ */
+let progressTab = 'body';
+let selectedStrengthExercise = STRENGTH_EXERCISES[0];
+
+function renderProgress(){
+  return `
+    <div class="segmented" style="margin-bottom:16px;">
+      <button class="${progressTab==='body'?'active':''}" onclick="setProgressTab('body')">Body</button>
+      <button class="${progressTab==='strength'?'active':''}" onclick="setProgressTab('strength')">Strength</button>
+    </div>
+    ${progressTab==='body' ? renderBodyProgress() : renderStrengthProgress()}
+  `;
+}
+function setProgressTab(t){ progressTab=t; render(); }
+
+function renderBodyProgress(){
+  const weights = [...DB.weights].sort((a,b)=>a.date.localeCompare(b.date));
+  const chart = weights.length>=2 ? lineChart(weights.map(w=>({date:w.date,value:w.weight})), 'kg') : '';
+  const weeklyAvg = computeWeeklyAvg(weights);
+  const measurements = [...DB.measurements].sort((a,b)=>b.date.localeCompare(a.date));
+
+  return `
+    <div class="card">
+      <div class="card-title-row"><p class="card-title">Bodyweight</p><button class="link-btn" onclick="openQuickWeight()">+ Add</button></div>
+      ${weights.length ? chart : emptyState('No weight logged yet', 'Log your weight daily to see trends here.')}
+      ${weeklyAvg.length ? `<div class="stat-sub" style="margin-top:8px;">7-day avg: <b style="color:var(--text)">${weeklyAvg[weeklyAvg.length-1].value} kg</b></div>` : ''}
+    </div>
+
+    <div class="card">
+      <div class="card-title-row">
+        <p class="card-title">Measurements</p>
+        <button class="link-btn" onclick="openMeasurementForm()">+ Add</button>
+      </div>
+      ${measurements.length ? measurements.slice(0,6).map(m=>`
+        <div class="swipe-item">
+          <div class="swipe-content" style="padding:12px 14px;">
+            <div class="list-row">
+              <div class="list-row-main">
+                <div class="lr-title">${fmtDate(m.date)}</div>
+                <div class="lr-sub">${['waist','arm','forearm','chest','thigh'].filter(k=>m[k]).map(k=>capitalize(k)+' '+m[k]).join(' · ')}</div>
+              </div>
+              <button class="lr-icon-btn" onclick="deleteMeasurement('${m.id}')">${ICONS.trash}</button>
+            </div>
+          </div>
+        </div>
+      `).join('') : emptyState('No measurements yet', 'Track waist, arm, forearm, chest and thigh over time.')}
+    </div>
+  `;
+}
+function capitalize(s){ return s[0].toUpperCase()+s.slice(1); }
+function computeWeeklyAvg(weights){
+  const byWeek = {};
+  weights.forEach(w=>{
+    const d = new Date(w.date+'T00:00:00');
+    const weekKey = getWeekKey(d);
+    if(!byWeek[weekKey]) byWeek[weekKey]=[];
+    byWeek[weekKey].push(w.weight);
+  });
+  return Object.keys(byWeek).sort().map(k=>({date:k, value: round1(byWeek[k].reduce((a,b)=>a+b,0)/byWeek[k].length)}));
+}
+function getWeekKey(d){
+  const onejan = new Date(d.getFullYear(),0,1);
+  const week = Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7);
+  return d.getFullYear()+'-W'+week;
+}
+
+function renderStrengthProgress(){
+  const logs = STRENGTH_EXERCISES.map(name=>{
+    const points = [];
+    [...DB.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{
+      const ex = w.exercises.find(e=>e.name===name);
+      if(ex && ex.sets.length){
+        const top = ex.sets.reduce((a,b)=>b.weight>a.weight?b:a, ex.sets[0]);
+        points.push({date:w.date, value:top.weight, reps:top.reps});
+      }
+    });
+    return {name, points};
+  });
+  const current = logs.find(l=>l.name===selectedStrengthExercise);
+
+  return `
+    <div class="chip-row" style="margin-bottom:16px;">
+      ${STRENGTH_EXERCISES.map(name=>`<button class="chip ${name===selectedStrengthExercise?'active':''}" onclick="selectStrengthExercise('${name.replace(/'/g,"\\'")}')">${name}</button>`).join('')}
+    </div>
+    <div class="card">
+      <p class="card-title">${current.name}</p>
+      ${current.points.length>=2 ? lineChart(current.points, 'kg') :
+        (current.points.length===1 ? `<div class="stat-value" style="font-size:26px;">${current.points[0].value} kg × ${current.points[0].reps}</div><div class="stat-sub">Single entry so far — log another session to see a trend.</div>`
+        : emptyState('No history yet', 'Log this exercise in Workout to start tracking it.'))}
+    </div>
+    ${current.points.length ? `
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-label">Personal best</div>
+          <div class="stat-value">${Math.max(...current.points.map(p=>p.value))}<span class="unit">kg</span></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Sessions logged</div>
+          <div class="stat-value">${current.points.length}</div>
+        </div>
+      </div>
+    ` : ''}
+  `;
+}
+function selectStrengthExercise(name){ selectedStrengthExercise=name; render(); }
+
+function lineChart(points, unit){
+  const w=300,h=140,padL=6,padR=6,padT=14,padB=22;
+  const vals = points.map(p=>p.value);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = (max-min) || 1;
+  const n = points.length;
+  const xs = i => padL + (n===1?0:(i/(n-1))*(w-padL-padR));
+  const ys = v => (h-padB) - ((v-min)/range)*(h-padT-padB);
+  const pts = points.map((p,i)=>`${xs(i)},${ys(p.value)}`).join(' ');
+  const dots = points.map((p,i)=>`<circle cx="${xs(i)}" cy="${ys(p.value)}" r="3" fill="var(--accent)"/>`).join('');
+  const firstLabel = points[0].date, lastLabel = points[points.length-1].date;
+  return `
+    <svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+      <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dots}
+      <text x="${padL}" y="${h-4}" font-size="10" fill="var(--text-faint)">${fmtDate(firstLabel)}</text>
+      <text x="${w-padR}" y="${h-4}" font-size="10" fill="var(--text-faint)" text-anchor="end">${fmtDate(lastLabel)}</text>
+      <text x="${w-padR}" y="${padT}" font-size="11" fill="var(--text-secondary)" text-anchor="end" font-weight="600">${max}${unit}</text>
+    </svg>
+  `;
+}
+function emptyState(title, body){
+  return `<div class="empty-state"><div class="es-title">${title}</div><div class="es-body">${body}</div></div>`;
+}
+
+/* ============ MORE ============ */
+function renderMoreMenu(){
+  const items = [
+    {sub:'nutrition', icon:ICONS.flame, title:'Nutrition', desc:'Calories, protein, water, fiber, sleep'},
+    {sub:'running', icon:'&#127939;', title:'Running', desc:'Distance, pace and run history'},
+    {sub:'checkin', icon:'&#128248;', title:'Monthly check-in', desc:'Photos, measurements and goals'},
+    {sub:'exercises', icon:'&#128221;', title:'Exercise plans', desc:'Edit your workout day splits'},
+    {sub:'settings', icon:'&#9881;', title:'Settings', desc:'Targets, theme, data'}
+  ];
+  return `
+    <div class="more-list">
+      ${items.map(it=>`
+        <div class="more-item" onclick="go('more','${it.sub}')">
+          <div class="mi-icon">${it.icon}</div>
+          <div class="mi-text">
+            <div class="mi-title">${it.title}</div>
+            <div class="mi-sub">${it.desc}</div>
+          </div>
+          <div class="mi-chev">${ICONS.chev}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* ---- Nutrition page ---- */
+function renderNutritionPage(){
+  const entries = [...DB.nutrition].sort((a,b)=>b.date.localeCompare(a.date));
+  return `
+    <button class="btn btn-primary" style="margin-bottom:16px;" onclick="openQuickNutrition()">${ICONS.plus} Log today's nutrition</button>
+    <p class="section-label">History</p>
+    ${entries.length ? entries.map(n=>`
+      <div class="swipe-item">
+        <div class="swipe-content">
+          <div class="list-row">
+            <div class="list-row-main">
+              <div class="lr-title">${fmtDate(n.date)}</div>
+              <div class="lr-sub">${n.calories||0} kcal · ${n.protein||0}g protein · ${n.water||0}ml water${n.sleep?' · '+n.sleep+'h sleep':''}</div>
+            </div>
+            <div class="lr-actions">
+              <button class="lr-icon-btn" onclick="editNutrition('${n.id}')">${ICONS.edit}</button>
+              <button class="lr-icon-btn" onclick="deleteNutrition('${n.id}')">${ICONS.trash}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('') : emptyState('No entries yet', 'Log calories, protein, water and sleep to track your bulk.')}
+  `;
+}
+function editNutrition(id){
+  const n = DB.nutrition.find(x=>x.id===id);
+  openQuickNutrition(n);
+}
+function deleteNutrition(id){
+  if(!confirm('Delete this entry?')) return;
+  DB.nutrition = DB.nutrition.filter(n=>n.id!==id);
+  saveDB(); render();
+}
+
+/* ---- Running page ---- */
+function renderRunningPage(){
+  const runs = [...DB.runs].sort((a,b)=>b.date.localeCompare(a.date));
+  const chartPoints = [...DB.runs].sort((a,b)=>a.date.localeCompare(b.date)).map(r=>({date:r.date, value:r.distance}));
+  return `
+    <button class="btn btn-primary" style="margin-bottom:16px;" onclick="openQuickRun()">${ICONS.plus} Log a run</button>
+    ${chartPoints.length>=2 ? `<div class="card"><p class="card-title">Distance trend</p>${lineChart(chartPoints,'km')}</div>` : ''}
+    <p class="section-label">History</p>
+    ${runs.length ? runs.map(r=>`
+      <div class="swipe-item">
+        <div class="swipe-content">
+          <div class="list-row">
+            <div class="list-row-main">
+              <div class="lr-title">${fmtDate(r.date)} · ${r.distance}km</div>
+              <div class="lr-sub">${r.time}min · ${r.pace} min/km${r.walkBreaks?' · '+r.walkBreaks+' walk breaks':''}${r.difficulty?' · difficulty '+r.difficulty+'/5':''}</div>
+            </div>
+            <div class="lr-actions">
+              <button class="lr-icon-btn" onclick="deleteRun('${r.id}')">${ICONS.trash}</button>
+            </div>
+          </div>
+          ${r.notes ? `<div class="stat-sub" style="margin-top:6px;">${r.notes}</div>` : ''}
+        </div>
+      </div>
+    `).join('') : emptyState('No runs yet', 'Log distance and time to build your running history.')}
+  `;
+}
+function deleteRun(id){
+  if(!confirm('Delete this run?')) return;
+  DB.runs = DB.runs.filter(r=>r.id!==id);
+  saveDB(); render();
+}
+
+/* ---- Monthly check-in page ---- */
+function renderCheckinPage(){
+  const checkins = [...DB.checkins].sort((a,b)=>b.date.localeCompare(a.date));
+  return `
+    <button class="btn btn-primary" style="margin-bottom:16px;" onclick="openCheckinForm()">${ICONS.plus} New check-in</button>
+    ${checkins.length ? checkins.map(c=>`
+      <div class="checkin-card">
+        <div class="list-row" style="margin-bottom:10px;">
+          <div class="lr-title">${fmtDate(c.date)}</div>
+          <button class="lr-icon-btn" onclick="deleteCheckin('${c.id}')">${ICONS.trash}</button>
+        </div>
+        <div class="photo-grid" style="margin-bottom:10px;">
+          ${['photoFront','photoSide','photoBack'].map(k=>c[k]?`<img src="${c[k]}" style="width:100%; aspect-ratio:3/4; object-fit:cover; border-radius:10px;">`:`<div class="photo-slot" style="cursor:default;">No photo</div>`).join('')}
+        </div>
+        <div class="stat-sub">${['weight','waist','arm','forearm','chest','thigh'].filter(k=>c[k]).map(k=>capitalize(k)+': '+c[k]+(k==='weight'?'kg':'cm')).join(' · ')}</div>
+        ${c.improvement?`<div class="stat-sub" style="margin-top:6px;"><b style="color:var(--text)">Improvement:</b> ${c.improvement}</div>`:''}
+        ${c.weakness?`<div class="stat-sub"><b style="color:var(--text)">Weakest area:</b> ${c.weakness}</div>`:''}
+        ${c.goal?`<div class="stat-sub"><b style="color:var(--text)">Next goal:</b> ${c.goal}</div>`:''}
+      </div>
+    `).join('') : emptyState('No check-ins yet', 'Every 4 weeks, log photos and measurements to track your transformation.')}
+  `;
+}
+function deleteCheckin(id){
+  if(!confirm('Delete this check-in?')) return;
+  DB.checkins = DB.checkins.filter(c=>c.id!==id);
+  saveDB(); render();
+}
+
+/* ---- Exercises page ---- */
+function renderExercisesPage(){
+  return Object.keys(DB.plans).map(type=>`
+    <div class="card">
+      <div class="card-title-row"><p class="card-title">${type}</p><button class="link-btn" onclick="addPlanExercise('${type}')">+ Add</button></div>
+      ${DB.plans[type].map((name,i)=>`
+        <div class="list-row" style="padding:8px 0; border-bottom:1px solid var(--card-border-soft);">
+          <div class="lr-title" style="font-weight:500; font-size:14px;">${name}</div>
+          <button class="lr-icon-btn" onclick="removePlanExercise('${type}',${i})">${ICONS.trash}</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+function addPlanExercise(type){
+  openAddExerciseSheet(type, false);
+}
+function removePlanExercise(type,i){
+  DB.plans[type].splice(i,1);
+  saveDB(); render();
+}
+
+/* ---- Shared: add exercise to one or more day plans ---- */
+function openAddExerciseSheet(currentType, alsoAddToSession){
+  const types = Object.keys(DB.plans);
+  openSheet(`
+    <div class="sheet-header"><h2>Add exercise</h2><button class="sheet-close" onclick="closeSheet()">${ICONS.close}</button></div>
+    <div class="field"><label>Exercise name</label><input type="text" id="ae-name" placeholder="e.g. Cable Crossover" autofocus></div>
+    <div class="field">
+      <label>Add to these days</label>
+      <div class="chip-row" style="flex-wrap:wrap;">
+        ${types.map(t=>`<button class="chip ae-day-chip ${t===currentType?'active':''}" data-day="${t}" onclick="toggleAeDay(this)">${t}</button>`).join('')}
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="confirmAddExercise('${currentType}', ${alsoAddToSession})">Add exercise</button>
+  `);
+}
+function toggleAeDay(btn){
+  btn.classList.toggle('active');
+}
+function confirmAddExercise(currentType, alsoAddToSession){
+  const name = document.getElementById('ae-name').value.trim();
+  if(!name){ alert('Enter an exercise name.'); return; }
+  const selected = Array.from(document.querySelectorAll('.ae-day-chip.active')).map(b=>b.dataset.day);
+  if(!selected.length){ alert('Pick at least one day.'); return; }
+  selected.forEach(type=>{
+    if(!DB.plans[type].includes(name)) DB.plans[type].push(name);
+  });
+  saveDB();
+  if(alsoAddToSession && workoutState.exercises[currentType] && !workoutState.exercises[currentType].some(e=>e.name===name)){
+    workoutState.exercises[currentType].push({name, sets:[], notes:''});
+  }
+  closeSheet();
+  render();
+}
+
+/* ---- Settings page ---- */
+function renderSettingsPage(){
+  const s = DB.settings;
+  return `
+    <div class="card">
+      <p class="card-title">Daily targets</p>
+      <div class="field"><label>Calories (kcal)</label><input type="number" value="${s.calorieTarget}" onchange="updateSetting('calorieTarget',this.value)"></div>
+      <div class="field"><label>Protein (g)</label><input type="number" value="${s.proteinTarget}" onchange="updateSetting('proteinTarget',this.value)"></div>
+      <div class="field" style="margin-bottom:0;"><label>Water (ml)</label><input type="number" value="${s.waterTarget}" onchange="updateSetting('waterTarget',this.value)"></div>
+    </div>
+    <div class="card">
+      <p class="card-title">Appearance</p>
+      <div class="segmented">
+        <button class="${s.theme==='system'?'active':''}" onclick="setThemeSetting('system')">System</button>
+        <button class="${s.theme==='light'?'active':''}" onclick="setThemeSetting('light')">Light</button>
+        <button class="${s.theme==='dark'?'active':''}" onclick="setThemeSetting('dark')">Dark</button>
+      </div>
+    </div>
+    <div class="card">
+      <p class="card-title">Data</p>
+      <div class="btn-row" style="margin-bottom:10px;">
+        <button class="btn" onclick="exportData()">Export data</button>
+      </div>
+      <button class="btn btn-danger-outline" onclick="resetData()">Erase all data</button>
+    </div>
+  `;
+}
+function updateSetting(key,val){
+  DB.settings[key] = Number(val);
+  saveDB();
+}
+function setThemeSetting(t){
+  DB.settings.theme = t; setTheme(); saveDB(); render();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'fitness-journal-export.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function resetData(){
+  if(!confirm('This will permanently erase all logged data. Continue?')) return;
+  if(!confirm('Are you absolutely sure? This cannot be undone.')) return;
+  DB = DEFAULT_DB();
+  saveDB(); render();
+}
+
+/* ============ SHEET / MODAL SYSTEM ============ */
+function openSheet(html){
+  document.getElementById('sheet-body').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSheet(){
+  document.getElementById('overlay').classList.remove('open');
+}
+document.getElementById('overlay').addEventListener('click', (e)=>{
+  if(e.target.id==='overlay') closeSheet();
+});
+
+/* ---- Quick add: Weight ---- */
+function openQuickWeight(){
+  const today = todayStr();
+  const existing = DB.weights.find(w=>w.date===today);
+  const last = DB.weights.length ? DB.weights[DB.weights.length-1].weight : 75;
+  let val = existing ? existing.weight : last;
+  openSheet(`
+    <div class="sheet-header"><h2>Log weight</h2><button class="sheet-close" onclick="closeSheet()">${ICONS.close}</button></div>
+    <div class="field">
+      <label>Weight (kg)</label>
+      <div class="stepper">
+        <button onclick="adjustQuickVal(-0.1)">−</button>
+        <div class="stepper-val" id="qw-val">${round1(val)}</div>
+        <button onclick="adjustQuickVal(0.1)">+</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveQuickWeight()">Save</button>
+  `);
+  window._qwVal = round1(val);
+}
+function adjustQuickVal(delta){
+  window._qwVal = round1(window._qwVal + delta);
+  document.getElementById('qw-val').textContent = window._qwVal;
+}
+function saveQuickWeight(){
+  const today = todayStr();
+  const idx = DB.weights.findIndex(w=>w.date===today);
+  const entry = { id: idx>=0?DB.weights[idx].id:uid(), date: today, weight: window._qwVal };
+  if(idx>=0) DB.weights[idx]=entry; else DB.weights.push(entry);
+  DB.weights.sort((a,b)=>a.date.localeCompare(b.date));
+  saveDB(); closeSheet(); render();
+}
+
+/* ---- Quick add: Nutrition ---- */
+function openQuickNutrition(existing){
+  const today = existing?.date || todayStr();
+  const e = existing || DB.nutrition.find(n=>n.date===today) || {};
+  openSheet(`
+    <div class="sheet-header"><h2>Log nutrition</h2><button class="sheet-close" onclick="closeSheet()">${ICONS.close}</button></div>
+    <div class="field"><label>Date</label><input type="date" id="nu-date" value="${today}" max="${todayStr()}"></div>
+    <div class="field"><label>Calories (kcal)</label><input type="number" inputmode="numeric" id="nu-cal" value="${e.calories||''}" placeholder="0"></div>
+    <div class="field"><label>Protein (g)</label><input type="number" inputmode="numeric" id="nu-pro" value="${e.protein||''}" placeholder="0"></div>
+    <div class="field"><label>Water (ml)</label><input type="number" inputmode="numeric" id="nu-water" value="${e.water||''}" placeholder="0"></div>
+    <div class="field"><label>Fiber (g)</label><input type="number" inputmode="numeric" id="nu-fiber" value="${e.fiber||''}" placeholder="0"></div>
+    <div class="field"><label>Sleep (hours)</label><input type="number" inputmode="decimal" step="0.5" id="nu-sleep" value="${e.sleep||''}" placeholder="0"></div>
+    <button class="btn btn-primary" onclick="saveQuickNutrition('${existing?existing.id:''}')">Save</button>
+  `);
+}
+function saveQuickNutrition(existingId){
+  const date = document.getElementById('nu-date').value || todayStr();
+  const data = {
+    calories: Number(document.getElementById('nu-cal').value)||0,
+    protein: Number(document.getElementById('nu-pro').value)||0,
+    water: Number(document.getElementById('nu-water').value)||0,
+    fiber: Number(document.getElementById('nu-fiber').value)||0,
+    sleep: Number(document.getElementById('nu-sleep').value)||0
+  };
+  let idx = existingId ? DB.nutrition.findIndex(n=>n.id===existingId) : DB.nutrition.findIndex(n=>n.date===date);
+  const entry = { id: idx>=0?DB.nutrition[idx].id:uid(), date, ...data };
+  if(idx>=0) DB.nutrition[idx]=entry; else DB.nutrition.push(entry);
+  saveDB(); closeSheet(); render();
+}
+
+/* ---- Quick add: Run ---- */
+function openQuickRun(){
+  openSheet(`
+    <div class="sheet-header"><h2>Log a run</h2><button class="sheet-close" onclick="closeSheet()">${ICONS.close}</button></div>
+    <div class="field"><label>Date</label><input type="date" id="run-date" value="${todayStr()}" max="${todayStr()}"></div>
+    <div class="field"><label>Distance (km)</label><input type="number" inputmode="decimal" step="0.1" id="run-dist" placeholder="5.0"></div>
+    <div class="field"><label>Time (minutes)</label><input type="number" inputmode="decimal" step="0.5" id="run-time" placeholder="30"></div>
+    <div class="field"><label>Walk breaks</label><input type="number" inputmode="numeric" id="run-walk" placeholder="0"></div>
+    <div class="field">
+      <label>Difficulty (1–5)</label>
+      <div class="chip-row">
+        ${[1,2,3,4,5].map(n=>`<button class="chip" id="diff-${n}" onclick="setDiff(${n})">${n}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="run-notes" placeholder="How did it feel?"></textarea></div>
+    <button class="btn btn-primary" onclick="saveQuickRun()">Save</button>
+  `);
+  window._runDiff = null;
+}
+function setDiff(n){
+  window._runDiff = n;
+  [1,2,3,4,5].forEach(i=>document.getElementById('diff-'+i).classList.toggle('active', i===n));
+}
+function saveQuickRun(){
+  const dist = Number(document.getElementById('run-dist').value);
+  const time = Number(document.getElementById('run-time').value);
+  if(!dist || !time){ alert('Enter distance and time.'); return; }
+  const pace = round1(time/dist);
+  const entry = {
+    id: uid(), date: document.getElementById('run-date').value || todayStr(),
+    distance: dist, time, pace,
+    walkBreaks: Number(document.getElementById('run-walk').value)||0,
+    difficulty: window._runDiff || null,
+    notes: document.getElementById('run-notes').value || ''
+  };
+  DB.runs.push(entry);
+  saveDB(); closeSheet(); render();
+}
+
+/* ---- Measurement form ---- */
+function openMeasurementForm(){
+  openSheet(`
+    <div class="sheet-header"><h2>Add measurements</h2><button class="sheet-close" onclick="closeSheet()">${ICONS.close}</button></div>
+    <div class="field"><label>Date</label><input type="date" id="ms-date" value="${todayStr()}" max="${todayStr()}"></div>
+    <div class="field"><label>Waist (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ms-waist"></div>
+    <div class="field"><label>Arm (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ms-arm"></div>
+    <div class="field"><label>Forearm (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ms-forearm"></div>
+    <div class="field"><label>Chest (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ms-chest"></div>
+    <div class="field"><label>Thigh (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ms-thigh"></div>
+    <button class="btn btn-primary" onclick="saveMeasurement()">Save</button>
+  `);
+}
+function saveMeasurement(){
+  const entry = {
+    id: uid(), date: document.getElementById('ms-date').value || todayStr(),
+    waist: Number(document.getElementById('ms-waist').value)||null,
+    arm: Number(document.getElementById('ms-arm').value)||null,
+    forearm: Number(document.getElementById('ms-forearm').value)||null,
+    chest: Number(document.getElementById('ms-chest').value)||null,
+    thigh: Number(document.getElementById('ms-thigh').value)||null
+  };
+  DB.measurements.push(entry);
+  saveDB(); closeSheet(); render();
+}
+function deleteMeasurement(id){
+  if(!confirm('Delete this entry?')) return;
+  DB.measurements = DB.measurements.filter(m=>m.id!==id);
+  saveDB(); render();
+}
+
+/* ---- Monthly check-in form ---- */
+let checkinPhotos = { photoFront:null, photoSide:null, photoBack:null };
+function openCheckinForm(){
+  checkinPhotos = { photoFront:null, photoSide:null, photoBack:null };
+  const lastWeight = DB.weights.length ? DB.weights[DB.weights.length-1].weight : '';
+  openSheet(`
+    <div class="sheet-header"><h2>Monthly check-in</h2><button class="sheet-close" onclick="closeSheet()">${ICONS.close}</button></div>
+    <div class="field"><label>Date</label><input type="date" id="ci-date" value="${todayStr()}" max="${todayStr()}"></div>
+    <div class="field">
+      <label>Photos</label>
+      <div class="photo-grid">
+        ${['photoFront','photoSide','photoBack'].map((k,i)=>`
+          <div class="photo-slot" id="slot-${k}">
+            <span>${['Front','Side','Back'][i]}</span>
+            <input type="file" accept="image/*" onchange="handlePhotoUpload(event,'${k}')">
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Weight (kg)</label><input type="number" inputmode="decimal" step="0.1" id="ci-weight" value="${lastWeight}"></div>
+    <div class="field"><label>Waist (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ci-waist"></div>
+    <div class="field"><label>Arm (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ci-arm"></div>
+    <div class="field"><label>Forearm (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ci-forearm"></div>
+    <div class="field"><label>Chest (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ci-chest"></div>
+    <div class="field"><label>Thigh (cm)</label><input type="number" inputmode="decimal" step="0.1" id="ci-thigh"></div>
+    <div class="field"><label>Biggest improvement</label><textarea id="ci-improve" placeholder="What's changed for the better?"></textarea></div>
+    <div class="field"><label>Weakest area</label><textarea id="ci-weak" placeholder="What needs more focus?"></textarea></div>
+    <div class="field"><label>Next month's goal</label><textarea id="ci-goal" placeholder="What are you aiming for?"></textarea></div>
+    <button class="btn btn-primary" onclick="saveCheckin()">Save check-in</button>
+  `);
+}
+function handlePhotoUpload(evt, key){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    img.onload = ()=>{
+      const maxW = 400;
+      const scale = Math.min(1, maxW/img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width*scale; canvas.height = img.height*scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+      checkinPhotos[key] = dataUrl;
+      const slot = document.getElementById('slot-'+key);
+      slot.innerHTML = `<img src="${dataUrl}"><input type="file" accept="image/*" onchange="handlePhotoUpload(event,'${key}')">`;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function saveCheckin(){
+  const entry = {
+    id: uid(), date: document.getElementById('ci-date').value || todayStr(),
+    weight: Number(document.getElementById('ci-weight').value)||null,
+    waist: Number(document.getElementById('ci-waist').value)||null,
+    arm: Number(document.getElementById('ci-arm').value)||null,
+    forearm: Number(document.getElementById('ci-forearm').value)||null,
+    chest: Number(document.getElementById('ci-chest').value)||null,
+    thigh: Number(document.getElementById('ci-thigh').value)||null,
+    photoFront: checkinPhotos.photoFront, photoSide: checkinPhotos.photoSide, photoBack: checkinPhotos.photoBack,
+    improvement: document.getElementById('ci-improve').value||'',
+    weakness: document.getElementById('ci-weak').value||'',
+    goal: document.getElementById('ci-goal').value||''
+  };
+  DB.checkins.push(entry);
+  saveDB(); closeSheet(); go('more','checkin');
+}
+
+/* ============ INIT ============ */
+async function init(){
+  await loadDB();
+  setTheme();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(DB.settings.theme==='system') render(); });
+  render();
+}
+init();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
