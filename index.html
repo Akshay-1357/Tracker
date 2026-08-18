@@ -709,15 +709,178 @@ let progressTab = 'body';
 let selectedStrengthExercise = STRENGTH_EXERCISES[0];
 
 function renderProgress(){
+  const tabs = [['body','Body'],['strength','Strength'],['workouts','Workouts'],['running','Running']];
   return `
-    <div class="segmented" style="margin-bottom:16px;">
-      <button class="${progressTab==='body'?'active':''}" onclick="setProgressTab('body')">Body</button>
-      <button class="${progressTab==='strength'?'active':''}" onclick="setProgressTab('strength')">Strength</button>
+    <div class="chip-row" style="margin-bottom:16px;">
+      ${tabs.map(([id,label])=>`<button class="chip ${progressTab===id?'active':''}" onclick="setProgressTab('${id}')">${label}</button>`).join('')}
     </div>
-    ${progressTab==='body' ? renderBodyProgress() : renderStrengthProgress()}
+    ${progressTab==='body' ? renderBodyProgress()
+      : progressTab==='strength' ? renderStrengthProgress()
+      : progressTab==='workouts' ? renderWorkoutsAnalysis()
+      : renderRunningAnalysis()}
   `;
 }
 function setProgressTab(t){ progressTab=t; render(); }
+
+/* ---- Workouts analysis ---- */
+function workoutVolume(ex){
+  return ex.sets.reduce((sum,s)=> sum + (s.weight||0)*(s.reps||0), 0);
+}
+function renderWorkoutsAnalysis(){
+  const workouts = [...DB.workouts].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!workouts.length){
+    return `
+      <div class="card">${emptyState('No workouts logged yet', 'Log sessions in the Workout tab to see volume trends and a full breakdown here.')}</div>
+    `;
+  }
+  const totalSets = workouts.reduce((s,w)=>s + w.exercises.reduce((s2,e)=>s2+e.sets.length,0), 0);
+  const totalVolume = workouts.reduce((s,w)=>s + w.exercises.reduce((s2,e)=>s2+workoutVolume(e),0), 0);
+
+  const volumePoints = workouts.map(w=>({
+    date: w.date,
+    value: Math.round(w.exercises.reduce((s,e)=>s+workoutVolume(e),0))
+  }));
+
+  const byType = {};
+  workouts.forEach(w=>{ byType[w.type] = (byType[w.type]||0) + 1; });
+
+  const exerciseTotals = {};
+  workouts.forEach(w=>{
+    w.exercises.forEach(e=>{
+      if(!exerciseTotals[e.name]) exerciseTotals[e.name] = {volume:0, sessions:0, sets:0};
+      exerciseTotals[e.name].volume += workoutVolume(e);
+      exerciseTotals[e.name].sessions += 1;
+      exerciseTotals[e.name].sets += e.sets.length;
+    });
+  });
+  const exerciseList = Object.entries(exerciseTotals).sort((a,b)=>b[1].volume-a[1].volume);
+
+  return `
+    <div class="card">
+      <div class="card-title-row"><p class="card-title">Workout data</p><button class="link-btn" onclick="exportWorkoutsCSV()">Download CSV</button></div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Sessions</div><div class="stat-value">${workouts.length}</div></div>
+        <div class="stat-box"><div class="stat-label">Sets logged</div><div class="stat-value">${totalSets}</div></div>
+        <div class="stat-box" style="grid-column:1/-1;"><div class="stat-label">Total volume (weight × reps, all-time)</div><div class="stat-value">${totalVolume.toLocaleString()}<span class="unit">kg</span></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Volume per session</p>
+      ${volumePoints.length>=2 ? lineChart(volumePoints, 'kg') : `<div class="stat-sub">Log one more session to see a trend.</div>`}
+    </div>
+
+    <div class="card">
+      <p class="card-title">Sessions by day type</p>
+      ${Object.entries(byType).sort((a,b)=>b[1]-a[1]).map(([type,count])=>`
+        <div class="list-row" style="padding:7px 0; border-bottom:1px solid var(--card-border-soft);">
+          <div class="lr-title" style="font-weight:500; font-size:13.5px;">${type}</div>
+          <div class="stat-sub">${count} session${count===1?'':'s'}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="card">
+      <p class="card-title">Volume by exercise</p>
+      ${exerciseList.map(([name,d])=>`
+        <div class="list-row" style="padding:8px 0; border-bottom:1px solid var(--card-border-soft);">
+          <div class="list-row-main">
+            <div class="lr-title" style="font-weight:500; font-size:13.5px;">${name}</div>
+            <div class="lr-sub">${d.sessions} session${d.sessions===1?'':'s'} · ${d.sets} sets</div>
+          </div>
+          <div class="stat-sub" style="text-align:right; color:var(--text); font-weight:600;">${Math.round(d.volume).toLocaleString()}kg</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function exportWorkoutsCSV(){
+  const rows = [['Date','Day Type','Exercise','Set #','Weight (kg)','Reps','RIR','Notes']];
+  [...DB.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{
+    w.exercises.forEach(e=>{
+      e.sets.forEach((s,i)=>{
+        rows.push([w.date, w.type, e.name, i+1, s.weight, s.reps, s.rir??'', (e.notes||'').replace(/\n/g,' ')]);
+      });
+    });
+  });
+  downloadCSV('fit-workouts.csv', rows);
+}
+
+/* ---- Running analysis ---- */
+function renderRunningAnalysis(){
+  const runs = [...DB.runs].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!runs.length){
+    return `
+      <div class="card">${emptyState('No runs logged yet', 'Log runs from More → Running to see pace and mileage trends here.')}</div>
+    `;
+  }
+  const totalDist = round1(runs.reduce((s,r)=>s+r.distance,0));
+  const totalTime = runs.reduce((s,r)=>s+r.time,0);
+  const avgPace = round1(runs.reduce((s,r)=>s+r.pace,0)/runs.length);
+
+  const distPoints = runs.map(r=>({date:r.date, value:r.distance}));
+  const pacePoints = runs.map(r=>({date:r.date, value:r.pace}));
+
+  const byWeek = {};
+  runs.forEach(r=>{
+    const wk = getWeekKey(new Date(r.date+'T00:00:00'));
+    byWeek[wk] = (byWeek[wk]||0) + r.distance;
+  });
+  const weeks = Object.keys(byWeek).sort().slice(-8);
+
+  return `
+    <div class="card">
+      <div class="card-title-row"><p class="card-title">Running data</p><button class="link-btn" onclick="exportRunsCSV()">Download CSV</button></div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Total distance</div><div class="stat-value">${totalDist}<span class="unit">km</span></div></div>
+        <div class="stat-box"><div class="stat-label">Total runs</div><div class="stat-value">${runs.length}</div></div>
+        <div class="stat-box"><div class="stat-label">Total time</div><div class="stat-value">${Math.round(totalTime)}<span class="unit">min</span></div></div>
+        <div class="stat-box"><div class="stat-label">Avg pace</div><div class="stat-value">${avgPace}<span class="unit">min/km</span></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Distance per run</p>
+      ${distPoints.length>=2 ? lineChart(distPoints, 'km') : `<div class="stat-sub">Log one more run to see a trend.</div>`}
+    </div>
+
+    <div class="card">
+      <p class="card-title">Pace trend</p>
+      ${pacePoints.length>=2 ? lineChart(pacePoints, ' min/km') : `<div class="stat-sub">Log one more run to see a trend.</div>`}
+    </div>
+
+    <div class="card">
+      <p class="card-title">Weekly mileage</p>
+      ${weeks.map(wk=>`
+        <div class="list-row" style="padding:7px 0; border-bottom:1px solid var(--card-border-soft);">
+          <div class="lr-title" style="font-weight:500; font-size:13.5px;">${wk}</div>
+          <div class="stat-sub">${round1(byWeek[wk])} km</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function exportRunsCSV(){
+  const rows = [['Date','Distance (km)','Time (min)','Pace (min/km)','Walk Breaks','Difficulty','Notes']];
+  [...DB.runs].sort((a,b)=>a.date.localeCompare(b.date)).forEach(r=>{
+    rows.push([r.date, r.distance, r.time, r.pace, r.walkBreaks||0, r.difficulty??'', (r.notes||'').replace(/\n/g,' ')]);
+  });
+  downloadCSV('fit-runs.csv', rows);
+}
+
+/* ---- Shared CSV helper ---- */
+function downloadCSV(filename, rows){
+  const csv = rows.map(row => row.map(cell=>{
+    const v = (cell===null||cell===undefined) ? '' : String(cell);
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  }).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function renderBodyProgress(){
   const weights = [...DB.weights].sort((a,b)=>a.date.localeCompare(b.date));
